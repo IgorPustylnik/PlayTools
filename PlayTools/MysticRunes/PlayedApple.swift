@@ -52,12 +52,16 @@ public class PlayKeychain: NSObject {
             // kSecAttrKeyType is stored as `type` in the dictionary
             // kSecAttrKeyClass is stored as `kcls` in the dictionary
             let keyAttributes = [
-                kSecAttrKeyType: attributes["type"] as! CFString, // swiftlint:disable:this force_cast
-                kSecAttrKeyClass: attributes["kcls"] as! CFString // swiftlint:disable:this force_cast
+                kSecAttrKeyType: attributes["type"] as! CFString,  // swiftlint:disable:this force_cast
+                kSecAttrKeyClass: ((attributes["kcls"] ?? kSecAttrKeyClassPublic) as! CFString),  // swiftlint:disable:this force_cast
             ]
             let keyData = vData as! Data // swiftlint:disable:this force_cast
             let key = SecKeyCreateWithData(keyData as CFData, keyAttributes as CFDictionary, nil)
-            result?.pointee = Unmanaged.passRetained(key!)
+            if keyAttributes[kSecReturnData] as? Int == 1 {
+                result?.pointee = Unmanaged.passRetained(key!)
+            } else if keyAttributes[kSecReturnPersistentRef] as? Int == 1 {
+                result?.pointee = Unmanaged.passRetained(keyAttributes[kSecValuePersistentRef]!)
+            }
             return errSecSuccess
         }
         result?.pointee = Unmanaged.passRetained(vData)
